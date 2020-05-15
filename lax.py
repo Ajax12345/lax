@@ -235,7 +235,7 @@ class IN:
         return SQLExpression(self, OR(), _exp)
 
 class LIKE:
-    __slots__ = ('col', 'vals')
+    __slots__ = ('col', 'pattern')
     def __init__(self, col:Col, pattern:typing.List[typing.Any]) -> None:
         self.col, self.pattern = col, pattern
     def get_cols(self):
@@ -246,9 +246,6 @@ class LIKE:
         return f'{self.__class__.__name__}({self.col} {self.pattern})'
 
     
-    
-
-
 class SELECT:
     __slots__ = ('tablename', 'args', 'where', 'distinct', 'limit', 'bindings')
     def __init__(self, tablename:str, *args:typing.List[typing.Any], where:typing.Optional = None, distinct:typing.Optional[bool]=None, limit:typing.Optional[int]=None, bindings:typing.Optional[typing.List[str]]=None) -> None:
@@ -294,5 +291,6 @@ class Lax(LaxMain):
     
     
 if __name__ == '__main__':
-    s = (Col('name') == Str('James')) & (Col('id') < Int(10))
+    s = (Col('name') == Str('James')) & LIKE(Col('occupation'), '_asd%') & (Col('age') == Int(10))
     print(s)
+    print(list(s))

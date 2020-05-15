@@ -38,7 +38,65 @@ class funcs:
         __slots__ = ('column')
         @lax_utils.enforce_column
         def __init__(self, column:typing.Optional[str]=None):
-            self.column = column        
+            self.column = column   
+
+class Col:
+    __slots__ = ('name')
+    def __init__(self, _name:str) -> None:
+        self.name = _name
+    
+    def get_cols(self) -> typing.Iterator:
+        yield self.name
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}({self.name})'
+    
+class Int:
+    __slots__ = ('val')
+    def __init__(self, _val:int) -> None:
+        self.val = _val
+    
+    def get_vals(self) -> typing.Iterator:
+        yield self.val
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}({self.val})'
+
+class Str:
+    __slots__ = ('val')
+    def __init__(self, _val:int) -> None:
+        self.val = _val
+
+    def get_vals(self) -> typing.Iterator:
+        yield self.val
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}({self.val})'
+
+class IN:
+    __slots__ = ('col', 'vals')
+    def __init__(self, col:Col, vals:typing.List[typing.Any]) -> None:
+        self.col, self.vals = col, vals
+    def get_cols(self):
+        yield self.col
+    def get_vals(self):
+        yield from self.vals
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}({self.col} {self.vals})'
+
+class LIKE:
+    __slots__ = ('col', 'vals')
+    def __init__(self, col:Col, pattern:typing.List[typing.Any]) -> None:
+        self.col, self.pattern = col, pattern
+    def get_cols(self):
+        yield self.col
+    def get_vals(self):
+        yield self.pattern
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}({self.col} {self.pattern})'
+
+    
+    
 
 
 class SELECT:
@@ -47,7 +105,7 @@ class SELECT:
         self.tablename, self.args, self.where, self.distinct, self.limit, self.bindings = tablename, args, where, distinct, limit, bindings
     
     def __repr__(self) -> str:
-        return f'<lax RAW {self.__class__.__name__} header'
+        return f'<lax RAW {self.__class__.__name__} header>'
 
     @property
     def hook(self) -> str:

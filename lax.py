@@ -1,5 +1,6 @@
 import typing, json, abc
 import drivers.lax_drivers as lax_drivers
+import lax_utils
 
 class SELECT:
     pass
@@ -27,9 +28,10 @@ class Lax(LaxMain):
     def __init__(self, _driver:typing.Union[lax_drivers.SQLite, lax_drivers.MySQL], **kwargs:dict) -> None:
         self.driver, self.options = _driver, kwargs
         self.conn = None
-    
-    def execute(self, expression:typing.Union[SELECT, UPDATE, CREATE, INSERT]) -> DBCallback:
-        """run an @expression object"""
+
+    @lax_utils.load_conn
+    def execute(self, conn:typing.Union[lax_drivers.SQLite, lax_drivers.MySQL], expression:typing.Union[SELECT, UPDATE, CREATE, INSERT]) -> DBCallback:
+        pass
 
     
     

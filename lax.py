@@ -259,15 +259,35 @@ class SELECT:
         return self.__class__.__name__
 
 class UPDATE:
-    pass
+    __slots__ = ('tablename', 'vals', 'where')
+    def __init__(self, tablename:str, **kwargs:typing.Dict[str, typing.Any]) -> None:
+        self.tablename, self.vals, self.where = tablename, {a:b for a,b in kwargs.items() if a == 'where'}, kwargs.get('where')
+    def __repr__(self) -> str:
+        return f'<lax RAW {self.__class__.__name__} header>'
+
+    @property
+    def hook(self) -> str:
+        return self.__class__.__name__
 
 class CREATE:
-    pass
+    __slots__ = ('tablename', 'fields')
+    def __init__(self, tablename:str, *args:typing.List[typing.Tuple[typing.Union[str, Col], typing.Union[lax_drivers.SQLite.ColTypes, lax_drivers.MySQL.ColTypes]]]) -> None:
+        self.tablename, self.fields = tablename, args
+
+    def __repr__(self) -> str:
+        return f'<lax RAW {self.__class__.__name__} header>'
+
+    @property
+    def hook(self) -> str:
+        return self.__class__.__name__
 
 class INSERT:
     pass
 
 class DELETE:
+    pass
+
+class DROP:
     pass
 
 
@@ -291,6 +311,5 @@ class Lax(LaxMain):
     
     
 if __name__ == '__main__':
-    s = (Col('name') == Str('James')) & LIKE(Col('occupation'), '_asd%') & (Col('age') == Int(10))
+    s = UPDATE('users', name="Joe", where=(Col('name') == Str('James')) & LIKE(Col('occupation'), '_asd%') & (Col('age') == Int(10)))
     print(s)
-    print(list(s))

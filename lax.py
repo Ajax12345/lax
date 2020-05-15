@@ -1,6 +1,6 @@
 import typing, json, abc
 import drivers.lax_drivers as lax_drivers
-import lax_utils, collections
+import lax_utils, collections, lax_exceptions
 
 class funcs:
     class dbFuncs:
@@ -40,34 +40,178 @@ class funcs:
         def __init__(self, column:typing.Optional[str]=None):
             self.column = column   
 
+class SQLtype:
+    def __eq__(self, _):
+        raise lax_exceptions.InvalidOPOrder
+    def __lt__(self, _):
+        raise lax_exceptions.InvalidOPOrder
+    def __gt__(self, _):
+        raise lax_exceptions.InvalidOPOrder
+    def __le__(self, _):
+        raise lax_exceptions.InvalidOPOrder
+    def __ge__(self, _):
+        raise lax_exceptions.InvalidOPOrder
+    def __bool__(self) -> bool:
+        return True
+
+class EQ:
+    @property
+    def hook(self) -> str:
+        return 'eq'
+    @property
+    def exp(self) -> str:
+        return '='
+
+    def __bool__(self) -> bool:
+        return False
+
+    def __repr__(self) -> str:
+        return self.exp
+
+class LT:
+    @property
+    def hook(self) -> str:
+        return 'lt'
+    @property
+    def exp(self) -> str:
+        return '<'
+
+    def __bool__(self) -> bool:
+        return False
+
+    def __repr__(self) -> str:
+        return self.exp
+
+class GT:
+    @property
+    def hook(self) -> str:
+        return 'gt'
+    @property
+    def exp(self) -> str:
+        return '>'
+    def __bool__(self) -> bool:
+        return False
+
+    def __repr__(self) -> str:
+        return self.exp
+
+class GE:
+    @property
+    def hook(self) -> str:
+        return 'ge'
+    @property
+    def exp(self) -> str:
+        return '>='
+    def __bool__(self) -> bool:
+        return False
+    def __repr__(self) -> str:
+        return self.exp
+
+class LE:
+    @property
+    def hook(self) -> str:
+        return 'le'
+    @property
+    def exp(self) -> str:
+        return '<='
+    def __bool__(self) -> bool:
+        return False
+    def __repr__(self) -> str:
+        return self.exp
+
+class AND:
+    @property
+    def hook(self) -> str:
+        return 'and'
+    @property
+    def exp(self) -> str:
+        return 'AND'
+    def __bool__(self) -> bool:
+        return True
+
+    def __repr__(self) -> str:
+        return self.exp
+
+
+class OR:
+    @property
+    def hook(self) -> str:
+        return 'or'
+    def __bool__(self) -> bool:
+        return True
+    @property
+    def exp(self) -> str:
+        return 'OR'
+
+    def __repr__(self) -> str:
+        return self.exp
+
+
+class SQLExpression:
+    def __init__(self, left, op, right) -> None:
+        self.left, self.op, self.right = left, op, right
+
+    def __and__(self, _exp):
+        return self.__class__(self, AND(), _exp)
+
+    def __iter__(self) -> typing.Iterator:
+        yield from (self.left if self.left else [])
+        yield from (self.right if self.right else [])
+
+    def __or__(self, _exp):
+        return self.__class__(self, OR(), _exp)
+
+    def __repr__(self) -> str:
+        return f'{self.left} {self.op} {self.right}'
+    
+
+    
+
 class Col:
     __slots__ = ('name')
     def __init__(self, _name:str) -> None:
         self.name = _name
     
+    def __eq__(self, _exp:SQLtype) -> SQLExpression:
+        return SQLExpression(self, EQ(), _exp)
+    
+    def __lt__(self, _exp:SQLtype) -> SQLExpression:
+        return SQLExpression(self, LT(), _exp)
+
+    def __gt__(self, _exp:SQLtype) -> SQLExpression:
+        return SQLExpression(self, GT(), _exp)
+    
+    def __le__(self, _exp:SQLtype) -> SQLExpression:
+        return SQLExpression(self, LE(), _exp)
+
+    def __ge__(self, _exp:SQLtype) -> SQLExpression:
+        return SQLExpression(self, GE(), _exp)
+    def __bool__(self) -> bool:
+        return False
+
     def get_cols(self) -> typing.Iterator:
         yield self.name
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.name})'
     
-class Int:
+class Int(SQLtype):
     __slots__ = ('val')
     def __init__(self, _val:int) -> None:
         self.val = _val
     
-    def get_vals(self) -> typing.Iterator:
+    def __iter__(self) -> typing.Iterator:
         yield self.val
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.val})'
 
-class Str:
+class Str(SQLtype):
     __slots__ = ('val')
     def __init__(self, _val:int) -> None:
         self.val = _val
 
-    def get_vals(self) -> typing.Iterator:
+    def __iter__(self) -> typing.Iterator:
         yield self.val
 
     def __repr__(self) -> str:
@@ -79,10 +223,16 @@ class IN:
         self.col, self.vals = col, vals
     def get_cols(self):
         yield self.col
-    def get_vals(self):
+    def __iter__(self):
         yield from self.vals
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.col} {self.vals})'
+
+    def __and__(self, _exp):
+        return SQLExpression(self, AND(), _exp)
+
+    def __or__(self, _exp):
+        return SQLExpression(self, OR(), _exp)
 
 class LIKE:
     __slots__ = ('col', 'vals')
@@ -90,7 +240,7 @@ class LIKE:
         self.col, self.pattern = col, pattern
     def get_cols(self):
         yield self.col
-    def get_vals(self):
+    def __iter__(self):
         yield self.pattern
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.col} {self.pattern})'
@@ -144,4 +294,5 @@ class Lax(LaxMain):
     
     
 if __name__ == '__main__':
-    pass
+    s = (Col('name') == Str('James')) & (Col('id') < Int(10))
+    print(s)

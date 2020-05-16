@@ -11,6 +11,9 @@ class funcs:
         def __repr__(self) -> str:
             return f'<dbFunc {self.__class__.__name__}({self.column})'
     
+        def __str__(self) -> str:
+            return f'{self.__class__.__name__}({"*" if self.column is None else str(self.column)})'
+
     class AVE(dbFuncs):
         __slots__ = ('column')
         @lax_utils.enforce_column
@@ -163,6 +166,8 @@ class SQLExpression:
 
     def __repr__(self) -> str:
         return f'{self.left} {self.op} {self.right}'
+    def __str__(self) -> str:
+        return f'{self.left} {self.op} {self.right}'
     
 
     
@@ -206,6 +211,9 @@ class Int(SQLtype):
     def __iter__(self) -> typing.Iterator:
         yield self.val
 
+    def __str__(self):
+        return '?'
+
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.val})'
 
@@ -216,6 +224,9 @@ class Str(SQLtype):
 
     def __iter__(self) -> typing.Iterator:
         yield self.val
+
+    def __str__(self):
+        return '?'
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.val})'
@@ -234,6 +245,9 @@ class IN:
     def __and__(self, _exp):
         return SQLExpression(self, AND(), _exp)
 
+    def __str__(self) -> str:
+        return f'{str(self.col)} IN ({", ".join("?" for _ in self.vals)})'
+
     def __or__(self, _exp):
         return SQLExpression(self, OR(), _exp)
 
@@ -248,6 +262,8 @@ class LIKE:
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.col} {self.pattern})'
 
+    def __str__(self) -> str:
+        return f'{str(self.col)} LIKE ?'
     
 class SELECT:
     __slots__ = ('tablename', 'args', 'where', 'distinct', 'limit', 'bindings')
@@ -343,6 +359,6 @@ class Lax(LaxMain):
     
 if __name__ == '__main__':
     with Lax(lax_drivers.SQLite, filename='mytestlax.db') as lax:
-        result = lax.execute(SELECT('testtable',  where=Col('name')==Str('james'), distinct=True, limit=500))
-
+        result = lax.execute(SELECT('testtable',  funcs.MAX('id'),  bindings=['max']))
+    
     #l.execute(CREATE('mytable', ('name', lax_drivers.SQLite.ColTypes.TEXT), ('id', lax_drivers.SQLite.ColTypes.REAL)))

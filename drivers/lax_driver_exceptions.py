@@ -1,0 +1,4 @@
+
+
+class InvalidDriverOptions(Exception):
+    pass

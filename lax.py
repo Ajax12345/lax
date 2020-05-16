@@ -192,6 +192,9 @@ class Col:
     def get_cols(self) -> typing.Iterator:
         yield self.name
 
+    def __str__(self) -> str:
+        return self.name
+
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.name})'
     
@@ -324,6 +327,12 @@ class Lax(LaxMain):
     def __init__(self, _driver:typing.Union[lax_drivers.SQLite, lax_drivers.MySQL], **kwargs:dict) -> None:
         self.driver, self.options = _driver, kwargs
         self.conn = None
+    
+    def __enter__(self):
+        self.conn = _driver.init(self.options)
+        return self
+    def __exit__(self, *_):
+        self.conn.close()
 
     @lax_utils.load_conn
     def execute(self, conn:typing.Union[lax_drivers.SQLite, lax_drivers.MySQL], expression:typing.Union[SELECT, UPDATE, CREATE, INSERT, DELETE]) -> typing.Callable:
@@ -333,5 +342,5 @@ class Lax(LaxMain):
     
     
 if __name__ == '__main__':
-    s = (Col('name') == Str('James')) & LIKE(Col('occupation'), '_asd%') & (Col('age') == Int(10)) & (IN(Col('age'), [1, 2, 2, 4, 5] ))
-    print(list(s))
+    l = Lax(lax_drivers.SQLite, filename='mytest.db')
+    #l.execute(CREATE('mytable', ('name', lax_drivers.SQLite.ColTypes.TEXT), ('id', lax_drivers.SQLite.ColTypes.REAL)))

@@ -1,4 +1,5 @@
-import typing, json
+import typing, json, lax_driver_utils
+import lax_driver_exceptions, sqlite3
 
 class SQLite:
     class ColTypes:
@@ -29,6 +30,24 @@ class SQLite:
                 return 'text'
             def __str__(self) -> str:
                 return self.hook.upper()
+    def __init__(self, options:dict) -> None:
+        self.__conn = sqlite3.connect(options['filename'])
+    def __enter__(self):
+        return self
+    def __exit__(self, *_) -> bool:
+        self.close()
+
+    def close(self) -> None:
+        self.__conn.close()
+    
+    def execute(self, _expression) -> typing.Any:
+        pass
+    
+    @classmethod
+    @lax_driver_utils.sqlite_validate
+    def init(cls, _options:dict) -> typing.Callable:
+        return cls(_options)
+    
 
 class MySQL:
     class ColTypes:

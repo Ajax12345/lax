@@ -41,10 +41,16 @@ class SQLite:
 
     def close(self) -> None:
         self.__conn.close()
-    
-    def hook_select(self, _expression) -> typing.Callable:
-        print('got expression in here')
-        print(_expression)
+
+    def eval_where(self, _exp) -> str:
+        return "<WHERE>"
+
+    def hook_select(self, _exp) -> typing.Callable:
+        #self.tablename, self.args, self.where, self.distinct, self.limit, self.bindings = tablename, args, where, distinct, limit, bindings
+        statement = f'SELECT{" " if _exp.distinct is None else " DISTINCT "}{"*" if not _exp.args else ", ".join(map(str, _exp.args))} FROM {_exp.tablename}{" "+self.eval_where(_exp.where) if _exp.where is not None else ""}{"" if _exp.limit is None else " LIMIT "+str(_exp.limit)}'
+        print(statement)
+        vals = [] if _exp.where is None else list(_exp.where)
+        
         #n_conn = self.__conn.cursor()
 
     @lax_driver_utils.validate_hook

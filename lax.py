@@ -343,6 +343,6 @@ class Lax(LaxMain):
     
 if __name__ == '__main__':
     with Lax(lax_drivers.SQLite, filename='mytestlax.db') as lax:
-        result = lax.execute(SELECT('testtable', 'name', 'age', 'address', where=Col('name')==Str('james')))
+        result = lax.execute(SELECT('testtable',  where=Col('name')==Str('james'), distinct=True, limit=500))
 
     #l.execute(CREATE('mytable', ('name', lax_drivers.SQLite.ColTypes.TEXT), ('id', lax_drivers.SQLite.ColTypes.REAL)))

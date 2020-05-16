@@ -301,9 +301,9 @@ class CREATE:
         return self.__class__.__name__.lower()
 
 class INSERT:
-    __slots__ = ('tablename', 'vals')
-    def __init__(self, tablename:str, **kwargs:typing.List[typing.Tuple]) -> None:
-        self.tablename, self.vals = tablename, kwargs
+    __slots__ = ('tablename', 'args', 'kwargs')
+    def __init__(self, tablename:str, *args, **kwargs:typing.List[typing.Tuple]) -> None:
+        self.tablename, self.args, self.kwargs = tablename, args, kwargs
     def __repr__(self) -> str:
         return f'<lax RAW {self.__class__.__name__} header>'
 
@@ -358,17 +358,42 @@ class Lax(LaxMain):
     
     
 if __name__ == '__main__':
+    import sqlite3
+    '''
+    with Lax(lax_drivers.SQLite, filename='test_creation.db') as lax:
+        #result = lax.execute(SELECT('courses', funcs.COUNT()))
+        #lax.execute(CREATE('testtable1', ('name', lax_drivers.SQLite.ColTypes.TEXT), ('id', lax_drivers.SQLite.ColTypes.INTEGER)))
+        #lax.execute(INSERT('testtable1', 'James', 1))
+        #result = lax.execute(SELECT('testtable1', bindings=['name', 'id'])).peek()
+
+        #lax.execute(INSERT('testtable1', {'val':10}, 1))
+        #print(list(lax.execute(SELECT('testtable1', bindings=['name', 'id']))))
+        
+        for i in range(100000):
+            lax.execute(INSERT('testtable1', {'val':10}, i))
+    '''
+    
+
+    
     import contextlib, time, sqlite3
     @contextlib.contextmanager
     def timeit():
         t = time.time()
         yield
         print(f'executed in {abs(time.time() - t)}')
-
+    
+    '''
+    conn = sqlite3.connect('test_setup2.db')
+    conn.execute("CREATE TABLE testtable1 (name text, id real)")
+    conn.execute("CREATE TABLE testtable2 (name text, id real)")
+    conn.commit()
+    conn.close()
+    '''
     with timeit():
-        with Lax(lax_drivers.SQLite, filename='/Users/jamespetullo/assumptioncollege.db') as lax:
-            result = list(lax.execute(SELECT('courses', funcs.COUNT())))
+        with Lax(lax_drivers.SQLite, filename='test_setup2.db') as lax:
+            print(list(lax.execute(SELECT('testtable1', funcs.MAX('id')))))
             #print(list(result))
+    
     with timeit():
-        conn= list(sqlite3.connect('/Users/jamespetullo/assumptioncollege.db').cursor().execute("SELECT COUNT(*) FROM courses"))
+        print(list(sqlite3.connect('test_setup2.db').cursor().execute("SELECT MAX(id) FROM testtable2")))  
     #l.execute(CREATE('mytable', ('name', lax_drivers.SQLite.ColTypes.TEXT), ('id', lax_drivers.SQLite.ColTypes.REAL)))

@@ -11,8 +11,7 @@ class SelectorStream:
     def parse_dump(self, vals) -> typing.Iterator:
         for i in vals:
             try:
-                v = json.loads(i)
-                yield v
+                yield json.loads(i)
             except:
                 yield i
 
@@ -37,11 +36,6 @@ class SelectorStream:
 
         while (n:=self.stream.fetchone()) is not None:
             yield self.format_row(n)
-
-        
-
-
-    
 
 
 class SQLite:
@@ -77,19 +71,46 @@ class SQLite:
         self.__conn = sqlite3.connect(options['filename'])
     def __enter__(self):
         return self
-    def __exit__(self, *_) -> bool:
+    def __exit__(self, *_):
+        
         self.close()
 
     def close(self) -> None:
+        self.__conn.commit()
         self.__conn.close()
 
     def eval_where(self, _exp) -> str:
         return "<WHERE>"
 
+    def hook_create(self, _exp) -> None:
+        statement = f"CREATE TABLE {_exp.tablename} ({', '.join(a+' '+str(b()) for a, b in _exp.fields)})"
+        print(statement)
+        #self.__conn.execute()
+        self.__conn.execute(statement)
+        self.__conn.commit()
+
+    def json_dumps(self, _vals:typing.List[typing.Any]) -> typing.Iterator:
+        for i in _vals:
+            try:
+                yield json.dumps(i)
+            except:
+                yield i
+    def hook_insert(self, _exp) -> None:
+        if _exp.args:
+            statement = f'INSERT INTO {_exp.tablename} VALUES ({", ".join("?" for _ in _exp.args)})'
+            #print(statement)
+            self.__conn.execute(statement, list(self.json_dumps(_exp.args)))
+        else:
+            _keys = list(_exp.fields)
+            statement = f'INSERT INTO {_exp.tablename} ({", ".join(_keys)}) VALUES ({", ".join("?" for _ in _keys)})'
+            #print(statement)
+            self.__conn.execute(statement, list(self.json_dumps([_exp.fields[i] for i in _keys])))
+        
+    
     def hook_select(self, _exp) -> typing.Callable:
         #self.tablename, self.args, self.where, self.distinct, self.limit, self.bindings = tablename, args, where, distinct, limit, bindings
         statement = f'SELECT{" " if _exp.distinct is None else " DISTINCT "}{"*" if not _exp.args else ", ".join(map(str, _exp.args))} FROM {_exp.tablename}{" WHERE "+str(_exp.where) if _exp.where is not None else ""}{"" if _exp.limit is None else " LIMIT "+str(_exp.limit)}'
-        print(statement)
+        #print(statement)
         vals = [] if _exp.where is None else list(_exp.where)
         if vals:
             return SelectorStream(self.__conn.cursor().execute(statement, vals), _exp.bindings, _exp.args)

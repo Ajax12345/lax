@@ -282,13 +282,35 @@ class CREATE:
         return self.__class__.__name__
 
 class INSERT:
-    pass
+    __slots__ = ('tablename', 'vals')
+    def __init__(self, tablename:str, **kwargs:typing.List[typing.Tuple]) -> None:
+        self.tablename, self.vals = tablename, kwargs
+    def __repr__(self) -> str:
+        return f'<lax RAW {self.__class__.__name__} header>'
+
+    @property
+    def hook(self) -> str:
+        return self.__class__.__name__
 
 class DELETE:
-    pass
+    __slots__ = ('tablename', 'where')
+    def __init__(self, tablename:str, where:typing.Optional = None) -> None:
+        self.tablename, self.where = tablename, where
+    def __repr__(self) -> str:
+        return f'<lax RAW {self.__class__.__name__} header>'
+    @property
+    def hook(self) -> str:
+        return self.__class__.__name__
 
 class DROP:
-    pass
+    __slots__ = ('tablename',)
+    def __init__(self, tablename:str) -> None:
+        self.tablename = tablename
+    def __repr__(self) -> str:
+        return f'<lax RAW {self.__class__.__name__} header>'
+    @property
+    def hook(self) -> str:
+        return self.__class__.__name__
 
 
 class LaxMain(abc.ABC):
@@ -311,5 +333,5 @@ class Lax(LaxMain):
     
     
 if __name__ == '__main__':
-    s = UPDATE('users', name="Joe", where=(Col('name') == Str('James')) & LIKE(Col('occupation'), '_asd%') & (Col('age') == Int(10)))
-    print(s)
+    s = (Col('name') == Str('James')) & LIKE(Col('occupation'), '_asd%') & (Col('age') == Int(10)) & (IN(Col('age'), [1, 2, 2, 4, 5] ))
+    print(list(s))

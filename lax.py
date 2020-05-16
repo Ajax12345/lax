@@ -259,7 +259,7 @@ class SELECT:
 
     @property
     def hook(self) -> str:
-        return self.__class__.__name__
+        return self.__class__.__name__.lower()
 
 class UPDATE:
     __slots__ = ('tablename', 'vals', 'where')
@@ -270,7 +270,7 @@ class UPDATE:
 
     @property
     def hook(self) -> str:
-        return self.__class__.__name__
+        return self.__class__.__name__.lower()
 
 class CREATE:
     __slots__ = ('tablename', 'fields')
@@ -282,7 +282,7 @@ class CREATE:
 
     @property
     def hook(self) -> str:
-        return self.__class__.__name__
+        return self.__class__.__name__.lower()
 
 class INSERT:
     __slots__ = ('tablename', 'vals')
@@ -293,7 +293,7 @@ class INSERT:
 
     @property
     def hook(self) -> str:
-        return self.__class__.__name__
+        return self.__class__.__name__.lower()
 
 class DELETE:
     __slots__ = ('tablename', 'where')
@@ -303,7 +303,7 @@ class DELETE:
         return f'<lax RAW {self.__class__.__name__} header>'
     @property
     def hook(self) -> str:
-        return self.__class__.__name__
+        return self.__class__.__name__.lower()
 
 class DROP:
     __slots__ = ('tablename',)
@@ -313,7 +313,7 @@ class DROP:
         return f'<lax RAW {self.__class__.__name__} header>'
     @property
     def hook(self) -> str:
-        return self.__class__.__name__
+        return self.__class__.__name__.lower()
 
 
 class LaxMain(abc.ABC):
@@ -329,7 +329,7 @@ class Lax(LaxMain):
         self.conn = None
     
     def __enter__(self):
-        self.conn = _driver.init(self.options)
+        self.conn = self.driver.init(self.options)
         return self
     def __exit__(self, *_):
         self.conn.close()
@@ -342,5 +342,7 @@ class Lax(LaxMain):
     
     
 if __name__ == '__main__':
-    l = Lax(lax_drivers.SQLite, filename='mytest.db')
+    with Lax(lax_drivers.SQLite, filename='mytestlax.db') as lax:
+        result = lax.execute(SELECT('testtable', 'name', 'age', 'address', where=Col('name')==Str('james')))
+
     #l.execute(CREATE('mytable', ('name', lax_drivers.SQLite.ColTypes.TEXT), ('id', lax_drivers.SQLite.ColTypes.REAL)))

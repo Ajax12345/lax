@@ -1,5 +1,7 @@
-import typing, json, lax_driver_utils
-import lax_driver_exceptions, sqlite3
+import typing, json
+from . import lax_driver_utils
+from . import lax_driver_exceptions
+import sqlite3
 
 class SQLite:
     class ColTypes:
@@ -40,8 +42,14 @@ class SQLite:
     def close(self) -> None:
         self.__conn.close()
     
+    def hook_select(self, _expression) -> typing.Callable:
+        print('got expression in here')
+        print(_expression)
+        #n_conn = self.__conn.cursor()
+
+    @lax_driver_utils.validate_hook
     def execute(self, _expression) -> typing.Any:
-        pass
+        return getattr(self, f'hook_{_expression.hook}')(_expression)
     
     @classmethod
     @lax_driver_utils.sqlite_validate

@@ -1,7 +1,48 @@
 import typing, json
 from . import lax_driver_utils
 from . import lax_driver_exceptions
-import sqlite3
+import sqlite3, collections
+
+
+class SelectorStream:
+    __slots__ = ('stream','bindings', 'p_queue', 'args', )
+    def __init__(self, _selector_stream, bindings:typing.List[str], args:typing.List[str]) -> None:
+        self.stream, self.bindings, self.p_queue, self.args = _selector_stream, bindings, collections.deque(), args
+    def parse_dump(self, vals) -> typing.Iterator:
+        for i in vals:
+            try:
+                v = json.loads(i)
+                yield v
+            except:
+                yield i
+
+    def format_row(self, vals) -> typing.Union[dict, list]:
+        return (lambda x:x if self.bindings is None else dict(zip(self.bindings if isinstance(self.bindings, list) else self.args, x)))(list(self.parse_dump(vals)))
+        
+    def peek(self, replace=False) -> typing.Dict:
+        v = self.format_row(val) if (val:=self.stream.fetchone()) is not None else None
+        if replace:
+            self.p_queue.append(v)
+        return v
+    
+    def get_range(self, start:int, end:int) -> typing.Iterator:
+        for _ in range(start):
+            _ = self.stream.fetchone()
+        for i in self.stream.fetchmany(end-start):
+            yield self.format_row(i)
+    
+    def __iter__(self) -> typing.Iterator:
+        while self.p_queue:
+            yield self.p_queue.popleft()
+
+        while (n:=self.stream.fetchone()) is not None:
+            yield self.format_row(n)
+
+        
+
+
+    
+
 
 class SQLite:
     class ColTypes:
@@ -50,7 +91,9 @@ class SQLite:
         statement = f'SELECT{" " if _exp.distinct is None else " DISTINCT "}{"*" if not _exp.args else ", ".join(map(str, _exp.args))} FROM {_exp.tablename}{" WHERE "+str(_exp.where) if _exp.where is not None else ""}{"" if _exp.limit is None else " LIMIT "+str(_exp.limit)}'
         print(statement)
         vals = [] if _exp.where is None else list(_exp.where)
-        print(vals)
+        if vals:
+            return SelectorStream(self.__conn.cursor().execute(statement, vals), _exp.bindings, _exp.args)
+        return SelectorStream(self.__conn.cursor().execute(statement), _exp.bindings, _exp.args)
         #n_conn = self.__conn.cursor()
 
     @lax_driver_utils.validate_hook

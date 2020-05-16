@@ -358,7 +358,17 @@ class Lax(LaxMain):
     
     
 if __name__ == '__main__':
-    with Lax(lax_drivers.SQLite, filename='mytestlax.db') as lax:
-        result = lax.execute(SELECT('testtable',  funcs.MAX('id'),  bindings=['max']))
-    
+    import contextlib, time, sqlite3
+    @contextlib.contextmanager
+    def timeit():
+        t = time.time()
+        yield
+        print(f'executed in {abs(time.time() - t)}')
+
+    with timeit():
+        with Lax(lax_drivers.SQLite, filename='/Users/jamespetullo/assumptioncollege.db') as lax:
+            result = list(lax.execute(SELECT('courses', funcs.COUNT())))
+            #print(list(result))
+    with timeit():
+        conn= list(sqlite3.connect('/Users/jamespetullo/assumptioncollege.db').cursor().execute("SELECT COUNT(*) FROM courses"))
     #l.execute(CREATE('mytable', ('name', lax_drivers.SQLite.ColTypes.TEXT), ('id', lax_drivers.SQLite.ColTypes.REAL)))
